@@ -21,6 +21,9 @@
 		"source=${localEnv:HOME}/.clearml/,target=/root/.clearml,type=bind,consistency=cached",
 		"source=${localEnv:HOME}/clearml.conf,target=/root/clearml.conf,type=bind,consistency=cached"
 	 ],
+	 "runArgs":[
+		"--shm-size=64000mb","-e","MKL_SERVICE_FORCE_INTEL=1"
+	 ]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
