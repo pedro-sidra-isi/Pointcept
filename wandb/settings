@@ -1,0 +1,5 @@
+[default]
+entity = pedrosidra
+project = scannetv2
+base_url = https://api.wandb.ai
+
