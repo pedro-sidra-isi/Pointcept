@@ -13,6 +13,7 @@ from pointcept.engines.defaults import (
 from pointcept.engines.train import TRAINERS
 from pointcept.engines.launch import launch
 import wandb
+import os
 
 
 def main_worker(cfg):
@@ -23,6 +24,12 @@ def main_worker(cfg):
 
     trainer = TRAINERS.build(dict(type=cfg.train.type, cfg=cfg))
     trainer.train()
+
+
+    filename = os.path.join(
+        trainer.cfg.save_path, "model", "model_last.pth"
+    )
+    wandb.log_model(path=filename, name="model_last.pth")
 
 
 def main():
