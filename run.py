@@ -10,7 +10,8 @@ task: clearml.Task = clearml.Task.init(
 )
 task.set_base_docker(
     docker_image="pedrosidra0/pointcept:v0",
-    docker_arguments="--shm-size=64000mb -e MKL_SERVICE_FORCE_INTEL=1",
+    # TODO: fix this to be more generic than this workaround for credentials
+    docker_arguments="--shm-size=64000mb -e MKL_SERVICE_FORCE_INTEL=1 -v /home/freitas/.netrc:/root/.netrc",
 )
 task.execute_remotely(queue_name="default")
 
@@ -34,7 +35,7 @@ open(pretrain_path , 'wb').write(r.content)
 #     "sh scripts/train.sh -g 2 -d scannet -c pretrain-msc-v1m1-0-spunet-base -n pretrain-msc-v1m1-0-spunet-base".split()
 # )
 subprocess.run(
-    f"sh scripts/train.sh -g 2 -d scannet -w {pretrain_path} -c semseg-spunet-v1m1-4-ft -n semseg-msc-v1m1-0f-spunet-base".split()
+    f"sh scripts/train.sh -g 1 -d scannet -w {pretrain_path} -c semseg-spunet-v1m1-4-ft -n semseg-msc-v1m1-0f-spunet-base".split()
 )
 
 model_path = next(Path("exp").glob("**/model/*.pth"))
