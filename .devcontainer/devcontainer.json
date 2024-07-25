@@ -1,13 +1,14 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
 {
-	"name": "Existing Dockerfile",
+	"name": "Pointcept Sidra",
 	"build": {
 		// Sets the run context to one level up instead of the .devcontainer folder.
 		"context": "..",
 		// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
 		"dockerfile": "../Dockerfile"
 	},
+	// "image": "pedrosidra0/pointcept:v1",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -17,12 +18,12 @@
 		}
 	},
 	"mounts": [ 
-		"source=${localWorkspaceFolder},target=/workspace/${localWorkspaceFolderBasename},type=bind,consistency=cached",
 		"source=${localEnv:HOME}/.clearml/,target=/root/.clearml,type=bind,consistency=cached",
-		"source=${localEnv:HOME}/clearml.conf,target=/root/clearml.conf,type=bind,consistency=cached"
+		"source=${localEnv:HOME}/clearml.conf,target=/root/clearml.conf,type=bind,consistency=cached",
+		"source=${localEnv:HOME}/.netrc,target=/root/.netrc,type=bind,consistency=cached"
 	 ],
 	 "runArgs":[
-		"--shm-size=64000mb","-e","MKL_SERVICE_FORCE_INTEL=1"
+		"--shm-size=8000mb","-e","MKL_SERVICE_FORCE_INTEL=1"
 	 ]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
