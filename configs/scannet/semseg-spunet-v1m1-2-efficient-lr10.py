@@ -1,7 +1,7 @@
 _base_ = ["../_base_/default_runtime.py"]
 
 # misc custom setting
-batch_size = 4  # bs: total bs in all gpus
+batch_size = 12  # bs: total bs in all gpus
 mix_prob = 0.8
 empty_cache = False
 enable_amp = True
@@ -21,7 +21,7 @@ model = dict(
 
 # scheduler settings
 epoch = 800
-optimizer = dict(type="SGD", lr=0.05*(batch_size/48), momentum=0.9, weight_decay=0.0001, nesterov=True)
+optimizer = dict(type="SGD", lr=0.05, momentum=0.9, weight_decay=0.0001, nesterov=True)
 scheduler = dict(
     type="OneCycleLR",
     max_lr=optimizer["lr"],
@@ -64,6 +64,7 @@ data = dict(
         type=dataset_type,
         split="train",
         data_root=data_root,
+        lr_file="data/scannet/tasks/scenes/10.txt",
         transform=[
             dict(type="CenterShift", apply_z=True),
             dict(
