@@ -464,15 +464,3 @@ class RuntimeProfilerV2(HookBase):
 
         if self.interrupt:
             sys.exit(0)
-
-
-@HOOKS.register_module()
-class WandbInformationWriter(InformationWriter):
-    def after_epoch(self):
-        super().after_epoch()
-        metrics = {}
-        for key in self.model_output_keys:
-            metrics["train/" + key] = self.trainer.storage.history(key).avg
-
-        wandb.log(metrics, step=self.trainer.epoch + 1)
-
