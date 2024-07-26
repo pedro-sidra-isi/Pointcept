@@ -13,3 +13,7 @@ outputs/
 .idea
 */.DS_Store
 **/*.out
+
+#pedrosidra
+wandb/
+*.pth
