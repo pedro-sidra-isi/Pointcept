@@ -8,7 +8,7 @@ TRAIN_CODE=train.py
 
 DATASET=scannet
 CONFIG="None"
-EXP_NAME=debug
+EXP_NAME="None"
 WEIGHT="None"
 RESUME=false
 GPU=None
@@ -42,6 +42,11 @@ while getopts "p:d:c:n:w:g:r:" opt; do
       ;;
   esac
 done
+
+if [ "${EXP_NAME}" = 'None' ]
+then
+  EXP_NAME=$CONFIG
+fi
 
 if [ "${NUM_GPU}" = 'None' ]
 then
