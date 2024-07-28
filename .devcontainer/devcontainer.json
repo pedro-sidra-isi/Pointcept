@@ -8,7 +8,7 @@
 	// 	// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
 	// 	"dockerfile": "../Dockerfile"
 	// },
-	"image": "pedrosidra0/pointcept:v2",
+  "image": "pedrosidra0/pointcept:v3",
 	"customizations": {
 		"vscode": {
 			"extensions": [

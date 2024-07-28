@@ -1146,3 +1146,11 @@ class Compose(object):
         for t in self.transforms:
             data_dict = t(data_dict)
         return data_dict
+
+@TRANSFORMS.register_module()
+class SculptingOcclude(object):
+    def __init__(self, p=0.5):
+        self.p = p
+
+    def __call__(self, data_dict):
+        breakpoint()
