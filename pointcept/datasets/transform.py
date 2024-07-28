@@ -17,6 +17,9 @@ import numpy as np
 import torch
 import copy
 from collections.abc import Sequence, Mapping
+from pointcept.datasets.utils import ForkedPdb
+from pointcept.datasets.sculpting import add_random_cubes
+
 
 from pointcept.utils.registry import Registry
 
@@ -1147,10 +1150,29 @@ class Compose(object):
             data_dict = t(data_dict)
         return data_dict
 
+
 @TRANSFORMS.register_module()
 class SculptingOcclude(object):
     def __init__(self, p=0.5):
         self.p = p
 
     def __call__(self, data_dict):
-        breakpoint()
+        """
+        for semseg models,
+        data_dict.keys() = ['coord', 'color', 'normal', 'name', 'segment', 'instance']
+        """
+
+        (
+            data_dict["coord"],
+            data_dict["color"],
+            data_dict["segment"],
+            data_dict["instance"],
+            data_dict["normal"],
+        ) = add_random_cubes(
+            data_dict["coord"],
+            data_dict["color"],
+            data_dict["segment"],
+            data_dict["instance"],
+            data_dict["normal"],
+        )
+        return data_dict

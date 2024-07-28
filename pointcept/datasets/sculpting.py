@@ -23,40 +23,9 @@ from collections.abc import Sequence, Mapping
 
 from pointcept.utils.registry import Registry
 
-TRANSFORMS = Registry("transforms")
-
-
-@TRANSFORMS.register_module()
-class Collect(object):
-    def __init__(self, keys, offset_keys_dict=None, **kwargs):
-        """
-        e.g. Collect(keys=[coord], feat_keys=[coord, color])
-        """
-        if offset_keys_dict is None:
-            offset_keys_dict = dict(offset="coord")
-        self.keys = keys
-        self.offset_keys = offset_keys_dict
-        self.kwargs = kwargs
-
-    def __call__(self, data_dict):
-        data = dict()
-        if isinstance(self.keys, str):
-            self.keys = [self.keys]
-        for key in self.keys:
-            data[key] = data_dict[key]
-        for key, value in self.offset_keys.items():
-            data[key] = torch.tensor([data_dict[value].shape[0]])
-        for name, keys in self.kwargs.items():
-            name = name.replace("_keys", "")
-            assert isinstance(keys, Sequence)
-            data[name] = torch.cat([data_dict[key].float() for key in keys], dim=1)
-        return data
-
-
-def add_random_cubes(self, xyz, rgb, semantic_label, instance_label):
+def add_random_cubes(xyz, rgb, semantic_label, instance_label, normal=None):
     cube_size_min = 0.1
     cube_size_max = 0.5
-    np.random.seed(0)
     cubes = get_random_cubes_random_sampled_point_references(
         cube_size_min,
         cube_size_max,
@@ -74,19 +43,23 @@ def add_random_cubes(self, xyz, rgb, semantic_label, instance_label):
     rand_colors = 2 * np.random.rand(*cubes.shape) - 1
     rgb = np.vstack([rgb, rand_colors])
 
+    if normal is not None:
+        rand_normals = np.random.rand(*cubes.shape)
+        normal = np.vstack([normal, rand_normals])
+
     # Randomly turn colors off
     if np.random.rand() < 0.5:
         rgb = rgb * 0.0
 
     semantic_label = np.hstack(
         [np.ones_like(semantic_label), np.zeros(cubes.shape[0])]
-    )
+    ).astype(np.int32)
 
     instance_label = np.hstack(
         [-1 * np.ones(instance_label.shape[0]), -1 * np.ones(cubes.shape[0])]
-    )
+    ).astype(np.int32)
 
-    return xyz, rgb, semantic_label, instance_label
+    return xyz, rgb, semantic_label, instance_label, normal
 
 def normalize(arr):
     return arr / np.linalg.norm(arr)

@@ -2,6 +2,7 @@ _base_ = ["../_base_/default_runtime.py"]
 
 # misc custom setting
 batch_size = 1  # bs: total bs in all gpus
+num_worker = 1  # total worker in all gpu
 mix_prob = 0.8
 empty_cache = False
 enable_amp = True
@@ -12,11 +13,11 @@ model = dict(
     backbone=dict(
         type="SpUNet-v1m1",
         in_channels=6,
-        num_classes=20,
+        num_classes=2,
         channels=(32, 64, 128, 256, 256, 128, 96, 96),
         layers=(2, 3, 4, 6, 2, 2, 2, 2),
     ),
-    criteria=[dict(type="CrossEntropyLoss", loss_weight=1.0, ignore_index=-1)],
+    criteria=[dict(type="CrossEntropyLoss", loss_weight=1.0, ignore_index=-100)],
 )
 
 
@@ -65,9 +66,10 @@ data = dict(
         type=dataset_type,
         split="train",
         data_root=data_root,
+        lr_file="data/scannet/tasks/scenes/10.txt",
         transform=[
             dict(type="CenterShift", apply_z=True),
-            dict(type="SculptingOcclude", apply_z=True),
+            dict(type="SculptingOcclude"),
             dict(
                 type="RandomDropout", dropout_ratio=0.2, dropout_application_ratio=0.2
             ),
@@ -80,9 +82,9 @@ data = dict(
             dict(type="RandomFlip", p=0.5),
             dict(type="RandomJitter", sigma=0.005, clip=0.02),
             dict(type="ElasticDistortion", distortion_params=[[0.2, 0.4], [0.8, 1.6]]),
-            dict(type="ChromaticAutoContrast", p=0.2, blend_factor=None),
-            dict(type="ChromaticTranslation", p=0.95, ratio=0.05),
-            dict(type="ChromaticJitter", p=0.95, std=0.05),
+            # dict(type="ChromaticAutoContrast", p=0.2, blend_factor=None),
+            # dict(type="ChromaticTranslation", p=0.95, ratio=0.05),
+            # dict(type="ChromaticJitter", p=0.95, std=0.05),
             # dict(type="HueSaturationTranslation", hue_max=0.2, saturation_max=0.2),
             # dict(type="RandomColorDrop", p=0.2, color_augment=0.0),
             dict(
@@ -111,6 +113,7 @@ data = dict(
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
+            dict(type="SculptingOcclude"),
             dict(
                 type="GridSample",
                 grid_size=0.02,
@@ -136,6 +139,7 @@ data = dict(
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
+            dict(type="SculptingOcclude"),
             dict(type="NormalizeColor"),
         ],
         test_mode=True,
@@ -151,6 +155,7 @@ data = dict(
             crop=None,
             post_transform=[
                 dict(type="CenterShift", apply_z=False),
+            dict(type="SculptingOcclude"),
                 dict(type="ToTensor"),
                 dict(
                     type="Collect",
