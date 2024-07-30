@@ -265,14 +265,16 @@ class CheckpointLoaderAllowMismatch(CheckpointLoader):
         loaded_state_dict = super().prep_loaded_state_dict(checkpoint)
         current_model_dict = self.trainer.model.state_dict()
         # allows size mismatch
-        new_state_dict={k:v if v.size()==current_model_dict[k].size()  else  current_model_dict[k] for k,v in zip(current_model_dict.keys(), loaded_state_dict.values())}
-        removed_keys = {k for k,v in loaded_state_dict.items() if v.size()!=current_model_dict[k].size() }
+        removed_keys = {k for k,v in loaded_state_dict.items() if k in current_model_dict and v.size()!=current_model_dict[k].size() }
+
+        for key in removed_keys:
+            loaded_state_dict.pop(key)
 
         self.trainer.logger.warning(
             f"Removed keys due to size mismatch: {removed_keys}"
         )
 
-        return new_state_dict
+        return loaded_state_dict
 
 
 @HOOKS.register_module()
