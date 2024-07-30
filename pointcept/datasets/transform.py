@@ -17,7 +17,6 @@ import numpy as np
 import torch
 import copy
 from collections.abc import Sequence, Mapping
-from pointcept.datasets.utils import ForkedPdb
 from pointcept.datasets.sculpting import add_random_cubes
 
 
