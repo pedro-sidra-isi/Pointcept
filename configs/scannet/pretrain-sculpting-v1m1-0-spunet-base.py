@@ -38,35 +38,15 @@ dataset_type = "ScanNetDataset"
 data_root = "data/scannet"
 
 data = dict(
-    num_classes=20,
-    ignore_index=-1,
+    num_classes=2,
+    ignore_index=-100,
     names=[
-        "wall",
-        "floor",
-        "cabinet",
-        "bed",
-        "chair",
-        "sofa",
-        "table",
-        "door",
-        "window",
-        "bookshelf",
-        "picture",
-        "counter",
-        "desk",
-        "curtain",
-        "refridgerator",
-        "shower curtain",
-        "toilet",
-        "sink",
-        "bathtub",
-        "otherfurniture",
+        "occlusion","original"
     ],
     train=dict(
         type=dataset_type,
-        split="train",
+        split=["train", "val", "test"],
         data_root=data_root,
-        lr_file="data/scannet/tasks/scenes/10.txt",
         transform=[
             dict(type="CenterShift", apply_z=True),
             dict(type="SculptingOcclude"),
