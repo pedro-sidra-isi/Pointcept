@@ -8,7 +8,7 @@
 	// 	// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
 	// 	"dockerfile": "../Dockerfile"
 	// },
-  "image": "pedrosidra0/pointcept:v3",
+  "image": "pedrosidra0/pointcept:v2",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -19,12 +19,12 @@
 		}
 	},
 	"mounts": [ 
-		"source=${localEnv:HOME}/.clearml/,target=/root/.clearml,type=bind,consistency=cached",
-		"source=${localEnv:HOME}/clearml.conf,target=/root/clearml.conf,type=bind,consistency=cached",
+		// "source=${localEnv:HOME}/.clearml/,target=/root/.clearml,type=bind,consistency=cached",
+		// "source=${localEnv:HOME}/clearml.conf,target=/root/clearml.conf,type=bind,consistency=cached",
 		"source=${localEnv:HOME}/.netrc,target=/root/.netrc,type=bind,consistency=cached"
 	 ],
 	 "runArgs":[
-		"--shm-size=8000mb","-e","MKL_SERVICE_FORCE_INTEL=1"
+		"--shm-size=8000mb","-e","MKL_SERVICE_FORCE_INTEL=1","--runtime=nvidia"
 	 ]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
