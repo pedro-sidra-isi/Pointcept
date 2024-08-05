@@ -56,19 +56,24 @@ class MaskedSceneContrast(nn.Module):
         self.reconstruct_color = reconstruct_color
         self.reconstruct_normal = reconstruct_normal
 
+        # trainable token 
+        # ?? what is the cost function for this?
         self.mask_token = nn.Parameter(torch.zeros(1, backbone_in_channels))
         trunc_normal_(self.mask_token, mean=0.0, std=0.02)
+
         self.color_head = (
             nn.Linear(backbone_out_channels, 3) if reconstruct_color else None
         )
         self.normal_head = (
             nn.Linear(backbone_out_channels, 3) if reconstruct_normal else None
         )
+
+        # ??
         self.nce_criteria = torch.nn.CrossEntropyLoss(reduction="mean")
 
     @torch.no_grad()
     def generate_cross_masks(
-        self, view1_origin_coord, view1_offset, view2_origin_coord, view2_offset
+        self, view1_original_coord, view1_offset, view2_original_coord, view2_offset
     ):
         # union origin coord
         view1_batch = offset2batch(view1_offset)
@@ -76,12 +81,12 @@ class MaskedSceneContrast(nn.Module):
 
         view1_batch_count = view1_batch.bincount()
         view2_batch_count = view2_batch.bincount()
-        view1_origin_coord_split = view1_origin_coord.split(list(view1_batch_count))
-        view2_origin_coord_split = view2_origin_coord.split(list(view2_batch_count))
-        union_origin_coord = torch.cat(
+        view1_original_coord_split = view1_original_coord.split(list(view1_batch_count))
+        view2_original_coord_split = view2_original_coord.split(list(view2_batch_count))
+        union_original_coord = torch.cat(
             list(
                 chain.from_iterable(
-                    zip(view1_origin_coord_split, view2_origin_coord_split)
+                    zip(view1_original_coord_split, view2_original_coord_split)
                 )
             )
         )
@@ -91,7 +96,7 @@ class MaskedSceneContrast(nn.Module):
         union_batch = offset2batch(union_offset)
 
         # grid partition
-        mask_patch_coord = union_origin_coord.div(self.mask_grid_size)
+        mask_patch_coord = union_original_coord.div(self.mask_grid_size)
         mask_patch_grid_coord = torch.floor(mask_patch_coord)
         mask_patch_cluster = voxel_grid(
             pos=mask_patch_grid_coord, size=1, batch=union_batch, start=0
@@ -110,7 +115,7 @@ class MaskedSceneContrast(nn.Module):
 
         # generate cross masks
         assert self.mask_rate <= 0.5
-        patch_mask = torch.zeros(patch_num, device=union_origin_coord.device).int()
+        patch_mask = torch.zeros(patch_num, device=union_original_coord.device).int()
         rand_perm = torch.randperm(patch_num)
         mask_patch_num = int(patch_num * self.mask_rate)
 
@@ -118,7 +123,7 @@ class MaskedSceneContrast(nn.Module):
         patch_mask[rand_perm[0:mask_patch_num]] = 1
         patch_mask[rand_perm[mask_patch_num : mask_patch_num * 2]] = 2
         point_mask = torch.zeros(
-            union_origin_coord.shape[0], device=union_origin_coord.device
+            union_original_coord.shape[0], device=union_original_coord.device
         ).int()
         point_mask[
             patch2point_map[patch_mask == 1][patch2point_mask[patch_mask == 1]]
@@ -203,19 +208,21 @@ class MaskedSceneContrast(nn.Module):
         )
 
     def forward(self, data_dict):
-        view1_origin_coord = data_dict["view1_origin_coord"]
+        # original_coord = original coordinate
+        view1_original_coord = data_dict["view1_original_coord"]
         view1_coord = data_dict["view1_coord"]
         view1_feat = data_dict["view1_feat"]
         view1_offset = data_dict["view1_offset"].int()
 
-        view2_origin_coord = data_dict["view2_origin_coord"]
+        # original_coord = original coordinate
+        view2_original_coord = data_dict["view2_original_coord"]
         view2_coord = data_dict["view2_coord"]
         view2_feat = data_dict["view2_feat"]
         view2_offset = data_dict["view2_offset"].int()
 
         # mask generation by union original coord (without spatial augmentation)
         view1_point_mask, view2_point_mask = self.generate_cross_masks(
-            view1_origin_coord, view1_offset, view2_origin_coord, view2_offset
+            view1_original_coord, view1_offset, view2_original_coord, view2_offset
         )
 
         view1_mask_tokens = self.mask_token.expand(view1_coord.shape[0], -1)
@@ -227,13 +234,13 @@ class MaskedSceneContrast(nn.Module):
         view2_feat = view2_feat * (1 - view2_weight) + view2_mask_tokens * view2_weight
 
         view1_data_dict = dict(
-            origin_coord=view1_origin_coord,
+            original_coord=view1_original_coord,
             coord=view1_coord,
             feat=view1_feat,
             offset=view1_offset,
         )
         view2_data_dict = dict(
-            origin_coord=view2_origin_coord,
+            original_coord=view2_original_coord,
             coord=view2_coord,
             feat=view2_feat,
             offset=view2_offset,
@@ -258,9 +265,9 @@ class MaskedSceneContrast(nn.Module):
         view1_feat = self.backbone(view1_data_dict)
         view2_feat = self.backbone(view2_data_dict)
         match_index = self.match_contrastive_pair(
-            view1_origin_coord,
+            view1_original_coord,
             view1_offset,
-            view2_origin_coord,
+            view2_original_coord,
             view2_offset,
             max_k=self.matching_max_k,
             max_radius=self.matching_max_radius,

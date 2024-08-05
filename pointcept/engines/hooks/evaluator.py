@@ -121,12 +121,12 @@ class SemSegEvaluator(HookBase):
             loss = output_dict["loss"]
             pred = output.max(1)[1]
             segment = input_dict["segment"]
-            if "origin_coord" in input_dict.keys():
+            if "original_coord" in input_dict.keys():
                 idx, _ = pointops.knn_query(
                     1,
                     input_dict["coord"].float(),
                     input_dict["offset"].int(),
-                    input_dict["origin_coord"].float(),
+                    input_dict["original_coord"].float(),
                     input_dict["origin_offset"].int(),
                 )
                 pred = pred[idx.flatten().long()]
@@ -154,7 +154,7 @@ class SemSegEvaluator(HookBase):
             info = "Test: [{iter}/{max_iter}] ".format(
                 iter=i + 1, max_iter=len(self.trainer.val_loader)
             )
-            if "origin_coord" in input_dict.keys():
+            if "original_coord" in input_dict.keys():
                 info = "Interp. " + info
             self.trainer.logger.info(
                 info
@@ -522,12 +522,12 @@ class InsSegEvaluator(HookBase):
             segment = input_dict["segment"]
             instance = input_dict["instance"]
             # map to origin
-            if "origin_coord" in input_dict.keys():
+            if "original_coord" in input_dict.keys():
                 idx, _ = pointops.knn_query(
                     1,
                     input_dict["coord"].float(),
                     input_dict["offset"].int(),
-                    input_dict["origin_coord"].float(),
+                    input_dict["original_coord"].float(),
                     input_dict["origin_offset"].int(),
                 )
                 idx = idx.cpu().flatten().long()
