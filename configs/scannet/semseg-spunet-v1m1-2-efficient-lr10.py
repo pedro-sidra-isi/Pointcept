@@ -21,7 +21,7 @@ model = dict(
 
 # scheduler settings
 epoch = 800
-optimizer = dict(type="SGD", lr=0.05, momentum=0.9, weight_decay=0.0001, nesterov=True)
+optimizer = dict(type="Adam", lr=0.001)#, momentum=0.9, weight_decay=0.0001, nesterov=True)
 scheduler = dict(
     type="OneCycleLR",
     max_lr=optimizer["lr"],

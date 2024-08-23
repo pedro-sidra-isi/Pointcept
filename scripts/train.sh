@@ -85,7 +85,11 @@ echo " =========> RUN TASK <========="
 
 if [ "${WEIGHT}" = "None" ]
 then
-    $PYTHON "$CODE_DIR"/tools/$TRAIN_CODE \
+    echo running ...  $PYTHON "$CODE_DIR"/tools/$TRAIN_CODE \
+    --config-file "$CONFIG_DIR" \
+    --num-gpus "$GPU" \
+    --options save_path="$EXP_DIR"
+    $PYTHON -m pdb "$CODE_DIR"/tools/$TRAIN_CODE \
     --config-file "$CONFIG_DIR" \
     --num-gpus "$GPU" \
     --options save_path="$EXP_DIR"
