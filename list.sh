@@ -1,0 +1,5 @@
+set -e
+q docker run -v $HOME/.netrc:/root/.netrc -v $PWD:/workspace --shm-size=8000mb -e MKL_SERVICE_FORCE_INTEL=1 --runtime=nvidia pedrosidra0/pointcept:v2 bash scripts/train.sh -g 1 -d scannet -c semseg-spunet-v1m1-2-efficient-lr10 -n msc/LR10FT_Adam_RepoMSC -w pedrosidra/msc/pretrain_repo:v0
+q docker run -v $HOME/.netrc:/root/.netrc -v $PWD:/workspace --shm-size=8000mb -e MKL_SERVICE_FORCE_INTEL=1 --runtime=nvidia pedrosidra0/pointcept:v2 bash scripts/train.sh -g 1 -d scannet -c semseg-spunet-v1m1-2-efficient-lr10 -n msc/LR10FT_Adam_MyMSC -w pedrosidra/msc/pretrain_mine:v0
+q docker run -v $HOME/.netrc:/root/.netrc -v $PWD:/workspace --shm-size=8000mb -e MKL_SERVICE_FORCE_INTEL=1 --runtime=nvidia pedrosidra0/pointcept:v2 bash scripts/train.sh -g 1 -d scannet -c semseg-spunet-v1m1-2-efficient-lr10 -n msc/LR10FT_Adam_Sculpting -w pedrosidra/sculpting/run-3uk103f5-model_last.pth:v0
+q docker run -v $HOME/.netrc:/root/.netrc -v $PWD:/workspace --shm-size=8000mb -e MKL_SERVICE_FORCE_INTEL=1 --runtime=nvidia pedrosidra0/pointcept:v2 bash scripts/train.sh -g 1 -d scannet -c semseg-spunet-v1m1-2-efficient-lr10 -n msc/LR10FT_Adam_Scratch

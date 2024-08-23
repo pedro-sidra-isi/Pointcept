@@ -134,7 +134,7 @@ data = dict(
             dict(type="CenterShift", apply_z=True),
             dict(
                 type="Copy",
-                keys_dict={"coord": "origin_coord", "segment": "origin_segment"},
+                keys_dict={"coord": "original_coord", "segment": "origin_segment"},
             ),
             dict(
                 type="GridSample",
@@ -149,9 +149,9 @@ data = dict(
             dict(type="ToTensor"),
             dict(
                 type="Collect",
-                keys=("coord", "origin_coord", "segment", "origin_segment"),
+                keys=("coord", "original_coord", "segment", "origin_segment"),
                 feat_keys=("coord", "color", "normal"),
-                offset_keys_dict=dict(offset="coord", origin_offset="origin_coord"),
+                offset_keys_dict=dict(offset="coord", origin_offset="original_coord"),
             ),
         ],
         test_mode=False,

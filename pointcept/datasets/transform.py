@@ -17,6 +17,8 @@ import numpy as np
 import torch
 import copy
 from collections.abc import Sequence, Mapping
+from pointcept.datasets.sculpting import add_random_cubes
+
 
 from pointcept.utils.registry import Registry
 
@@ -54,7 +56,7 @@ class Collect(object):
 class Copy(object):
     def __init__(self, keys_dict=None):
         if keys_dict is None:
-            keys_dict = dict(coord="origin_coord", segment="origin_segment")
+            keys_dict = dict(coord="original_coord", segment="origin_segment")
         self.keys_dict = keys_dict
 
     def __call__(self, data_dict):
@@ -1000,8 +1002,8 @@ class SphereCrop(object):
             ]
             if "coord" in data_dict.keys():
                 data_dict["coord"] = data_dict["coord"][idx_crop]
-            if "origin_coord" in data_dict.keys():
-                data_dict["origin_coord"] = data_dict["origin_coord"][idx_crop]
+            if "original_coord" in data_dict.keys():
+                data_dict["original_coord"] = data_dict["original_coord"][idx_crop]
             if "grid_coord" in data_dict.keys():
                 data_dict["grid_coord"] = data_dict["grid_coord"][idx_crop]
             if "color" in data_dict.keys():
@@ -1067,7 +1069,7 @@ class CropBoundary(object):
 class ContrastiveViewsGenerator(object):
     def __init__(
         self,
-        view_keys=("coord", "color", "normal", "origin_coord"),
+        view_keys=("coord", "color", "normal", "original_coord"),
         view_trans_cfg=None,
     ):
         self.view_keys = view_keys
@@ -1145,4 +1147,31 @@ class Compose(object):
     def __call__(self, data_dict):
         for t in self.transforms:
             data_dict = t(data_dict)
+        return data_dict
+
+
+@TRANSFORMS.register_module()
+class SculptingOcclude(object):
+    def __init__(self, p=0.5):
+        self.p = p
+
+    def __call__(self, data_dict):
+        """
+        for semseg models,
+        data_dict.keys() = ['coord', 'color', 'normal', 'name', 'segment', 'instance']
+        """
+
+        (
+            data_dict["coord"],
+            data_dict["color"],
+            data_dict["segment"],
+            data_dict["instance"],
+            data_dict["normal"],
+        ) = add_random_cubes(
+            data_dict["coord"],
+            data_dict["color"],
+            data_dict["segment"],
+            data_dict["instance"],
+            data_dict["normal"],
+        )
         return data_dict

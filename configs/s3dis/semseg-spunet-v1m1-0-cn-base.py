@@ -100,7 +100,7 @@ data = dict(
             dict(type="CenterShift", apply_z=True),
             dict(
                 type="Copy",
-                keys_dict={"coord": "origin_coord", "segment": "origin_segment"},
+                keys_dict={"coord": "original_coord", "segment": "origin_segment"},
             ),
             dict(
                 type="GridSample",
@@ -117,11 +117,11 @@ data = dict(
                 keys=(
                     "coord",
                     "grid_coord",
-                    "origin_coord",
+                    "original_coord",
                     "segment",
                     "origin_segment",
                 ),
-                offset_keys_dict=dict(offset="coord", origin_offset="origin_coord"),
+                offset_keys_dict=dict(offset="coord", origin_offset="original_coord"),
                 feat_keys=["color", "normal"],
             ),
         ],

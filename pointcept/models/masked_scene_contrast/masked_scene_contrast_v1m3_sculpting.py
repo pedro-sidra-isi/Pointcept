@@ -21,7 +21,7 @@ from pointcept.models.utils import offset2batch
 from pointcept.utils.comm import get_world_size
 
 
-@MODELS.register_module("MSC-v1m1")
+@MODELS.register_module("MSC-v1m3")
 class MaskedSceneContrast(nn.Module):
     def __init__(
         self,
@@ -56,7 +56,7 @@ class MaskedSceneContrast(nn.Module):
         self.reconstruct_color = reconstruct_color
         self.reconstruct_normal = reconstruct_normal
 
-        # trainable token 
+        # trainable token
         self.mask_token = nn.Parameter(torch.zeros(1, backbone_in_channels))
         trunc_normal_(self.mask_token, mean=0.0, std=0.02)
 
@@ -136,7 +136,7 @@ class MaskedSceneContrast(nn.Module):
 
         # mark each patch with a tag: 1 for view1, 2 for view2
         patch_mask = torch.zeros(patch_num, device=union_original_coord.device).int()
-        
+
         # random list of patch IDs
         rand_perm = torch.randperm(patch_num)
         # fraction of patches chosen to be masked-out
@@ -210,9 +210,10 @@ class MaskedSceneContrast(nn.Module):
         # Select one random neighbor from each 'neighborhood'
 
         select = (
-            torch.cumsum(count, dim=0) # index of first point within each neighborhood
-             - torch.randint(count.max(), count.shape, device=count.device) % count # random offset into the 'neighborhood' indexes
-            - 1 # starts at 0
+            torch.cumsum(count, dim=0)  # index of first point within each neighborhood
+            - torch.randint(count.max(), count.shape, device=count.device)
+            % count  # random offset into the 'neighborhood' indexes
+            - 1  # starts at 0
         )
         # Select random neighbors
         index = index[select]
@@ -233,8 +234,12 @@ class MaskedSceneContrast(nn.Module):
         view2_feat = view2_feat[match_index[:, 1]]
 
         # Normalize features to [0,1]
-        view1_feat = view1_feat / ( torch.norm(view1_feat, p=2, dim=1, keepdim=True) + 1e-7)
-        view2_feat = view2_feat / ( torch.norm(view2_feat, p=2, dim=1, keepdim=True) + 1e-7)
+        view1_feat = view1_feat / (
+            torch.norm(view1_feat, p=2, dim=1, keepdim=True) + 1e-7
+        )
+        view2_feat = view2_feat / (
+            torch.norm(view2_feat, p=2, dim=1, keepdim=True) + 1e-7
+        )
 
         # dot between features => similarity between features i and features j
         # (row-> view1, col->view2, i.e. diagonal is positive match, off-diagonal is negative)
@@ -292,7 +297,7 @@ class MaskedSceneContrast(nn.Module):
         # Basically just take `view1_feat` and substitute the features with `mask_token`
         # wherever `view1_point_mask`=True
         view1_mask_tokens = self.mask_token.expand(view1_coord.shape[0], -1)
-        
+
         view1_weight = view1_point_mask.unsqueeze(-1).type_as(view1_mask_tokens)
         view1_feat = view1_feat * (1 - view1_weight) + view1_mask_tokens * view1_weight
 
@@ -345,7 +350,7 @@ class MaskedSceneContrast(nn.Module):
             max_k=self.matching_max_k,
             max_radius=self.matching_max_radius,
         )
-        
+
         # Contrastive loss -> all positive samples generate similar features between eachother
         # and unique between eachother
         nce_loss, pos_sim, neg_sim = self.compute_contrastive_loss(

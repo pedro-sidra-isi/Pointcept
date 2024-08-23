@@ -220,7 +220,7 @@ data = dict(
             dict(
                 type="Copy",
                 keys_dict={
-                    "coord": "origin_coord",
+                    "coord": "original_coord",
                     "segment": "origin_segment",
                     "instance": "origin_instance",
                 },
@@ -250,7 +250,7 @@ data = dict(
                     "grid_coord",
                     "segment",
                     "instance",
-                    "origin_coord",
+                    "original_coord",
                     "origin_segment",
                     "origin_instance",
                     "instance_centroid",
@@ -258,7 +258,7 @@ data = dict(
                     "condition",
                 ),
                 feat_keys=("color", "normal"),
-                offset_keys_dict=dict(offset="coord", origin_offset="origin_coord"),
+                offset_keys_dict=dict(offset="coord", origin_offset="original_coord"),
             ),
         ],
         test_mode=False,

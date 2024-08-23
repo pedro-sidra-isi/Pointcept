@@ -11,7 +11,7 @@ find_unused_parameters = False
 
 # model settings
 model = dict(
-    type="MSC-v1m1",
+    type="MSC-v1m3",
     backbone=dict(
         type="SpUNet-v1m1",
         in_channels=6,
@@ -82,6 +82,7 @@ data = dict(
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
+            dict(type="SculptingOcclude"),
             dict(type="RandomScale", scale=[0.9, 1.1]),
             dict(type="Copy", keys_dict={"coord": "original_coord"}),
             dict(

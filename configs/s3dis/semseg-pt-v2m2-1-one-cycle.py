@@ -120,7 +120,7 @@ data = dict(
             dict(type="CenterShift", apply_z=True),
             dict(
                 type="Copy",
-                keys_dict={"coord": "origin_coord", "segment": "origin_segment"},
+                keys_dict={"coord": "original_coord", "segment": "origin_segment"},
             ),
             dict(
                 type="GridSample",

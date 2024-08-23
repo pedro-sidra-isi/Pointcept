@@ -27,6 +27,8 @@ from pointcept.engines.test import TESTERS
 from .default import HookBase
 from .builder import HOOKS
 
+import wandb
+
 
 @HOOKS.register_module()
 class IterationTimer(HookBase):
@@ -209,45 +211,70 @@ class CheckpointLoader(HookBase):
         self.keywords = keywords
         self.replacement = replacement if replacement is not None else keywords
         self.strict = strict
+    
+    def prep_loaded_state_dict(self, checkpoint):
+        self.trainer.logger.info(
+            f"Loading layer weights with keyword: {self.keywords}, "
+            f"replace keyword with: {self.replacement}"
+        )
+        weight = OrderedDict()
+        for key, value in checkpoint["state_dict"].items():
+            if not key.startswith("module."):
+                key = "module." + key  # xxx.xxx -> module.xxx.xxx
+            # Now all keys contain "module." no matter DDP or not.
+            if self.keywords in key:
+                key = key.replace(self.keywords, self.replacement)
+            if comm.get_world_size() == 1:
+                key = key[7:]  # module.xxx.xxx -> xxx.xxx
+            weight[key] = value
+
+        return weight
 
     def before_train(self):
         self.trainer.logger.info("=> Loading checkpoint & weight ...")
-        if self.trainer.cfg.weight and os.path.isfile(self.trainer.cfg.weight):
-            self.trainer.logger.info(f"Loading weight at: {self.trainer.cfg.weight}")
-            checkpoint = torch.load(
-                self.trainer.cfg.weight,
-                map_location=lambda storage, loc: storage.cuda(),
-            )
-            self.trainer.logger.info(
-                f"Loading layer weights with keyword: {self.keywords}, "
-                f"replace keyword with: {self.replacement}"
-            )
-            weight = OrderedDict()
-            for key, value in checkpoint["state_dict"].items():
-                if not key.startswith("module."):
-                    key = "module." + key  # xxx.xxx -> module.xxx.xxx
-                # Now all keys contain "module." no matter DDP or not.
-                if self.keywords in key:
-                    key = key.replace(self.keywords, self.replacement)
-                if comm.get_world_size() == 1:
-                    key = key[7:]  # module.xxx.xxx -> xxx.xxx
-                weight[key] = value
-            load_state_info = self.trainer.model.load_state_dict(
-                weight, strict=self.strict
-            )
-            self.trainer.logger.info(f"Missing keys: {load_state_info[0]}")
-            if self.trainer.cfg.resume:
-                self.trainer.logger.info(
-                    f"Resuming train at eval epoch: {checkpoint['epoch']}"
-                )
-                self.trainer.start_epoch = checkpoint["epoch"]
-                self.trainer.best_metric_value = checkpoint["best_metric_value"]
-                self.trainer.optimizer.load_state_dict(checkpoint["optimizer"])
-                self.trainer.scheduler.load_state_dict(checkpoint["scheduler"])
-                if self.trainer.cfg.enable_amp:
-                    self.trainer.scaler.load_state_dict(checkpoint["scaler"])
-        else:
+        if not (self.trainer.cfg.weight and os.path.isfile(self.trainer.cfg.weight)):
             self.trainer.logger.info(f"No weight found at: {self.trainer.cfg.weight}")
+            return
+
+        self.trainer.logger.info(f"Loading weight at: {self.trainer.cfg.weight}")
+        checkpoint = torch.load(
+            self.trainer.cfg.weight,
+            map_location=lambda storage, loc: storage.cuda(),
+        )
+
+        weight = self.prep_loaded_state_dict(checkpoint)
+
+        load_state_info = self.trainer.model.load_state_dict(
+            weight, strict=self.strict
+        )
+        self.trainer.logger.info(f"Missing keys: {load_state_info[0]}")
+        if self.trainer.cfg.resume:
+            self.trainer.logger.info(
+                f"Resuming train at eval epoch: {checkpoint['epoch']}"
+            )
+            self.trainer.start_epoch = checkpoint["epoch"]
+            self.trainer.best_metric_value = checkpoint["best_metric_value"]
+            self.trainer.optimizer.load_state_dict(checkpoint["optimizer"])
+            self.trainer.scheduler.load_state_dict(checkpoint["scheduler"])
+            if self.trainer.cfg.enable_amp:
+                self.trainer.scaler.load_state_dict(checkpoint["scaler"])
+
+@HOOKS.register_module()
+class CheckpointLoaderAllowMismatch(CheckpointLoader):
+    def prep_loaded_state_dict(self, checkpoint):
+        loaded_state_dict = super().prep_loaded_state_dict(checkpoint)
+        current_model_dict = self.trainer.model.state_dict()
+        # allows size mismatch
+        removed_keys = {k for k,v in loaded_state_dict.items() if k in current_model_dict and v.size()!=current_model_dict[k].size() }
+
+        for key in removed_keys:
+            loaded_state_dict.pop(key)
+
+        self.trainer.logger.warning(
+            f"Removed keys due to size mismatch: {removed_keys}"
+        )
+
+        return loaded_state_dict
 
 
 @HOOKS.register_module()
