@@ -8,10 +8,13 @@ Please cite our work if the code is helpful to you.
 import os
 import sys
 import weakref
+import wandb
 import torch
 import torch.nn as nn
 import torch.utils.data
+from packaging import version
 from functools import partial
+from pathlib import Path
 
 if sys.version_info >= (3, 10):
     from collections.abc import Iterator
@@ -32,11 +35,16 @@ from pointcept.utils.registry import Registry
 
 
 TRAINERS = Registry("trainers")
+AMP_DTYPE = dict(
+    float16=torch.float16,
+    bfloat16=torch.bfloat16,
+)
 
 
 class TrainerBase:
     def __init__(self) -> None:
         self.hooks = []
+        self.model = None
         self.epoch = 0
         self.start_epoch = 0
         self.max_epoch = 0
@@ -151,7 +159,6 @@ class Trainer(TrainerBase):
             self.logger.info(">>>>>>>>>>>>>>>> Start Training >>>>>>>>>>>>>>>>")
             for self.epoch in range(self.start_epoch, self.max_epoch):
                 # => before epoch
-                # TODO: optimize to iteration based
                 if comm.get_world_size() > 1:
                     self.train_loader.sampler.set_epoch(self.epoch)
                 self.model.train()
@@ -174,11 +181,20 @@ class Trainer(TrainerBase):
             self.after_train()
 
     def run_step(self):
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            auto_cast = partial(torch.amp.autocast, device_type="cuda")
+        else:
+            # deprecated warning
+            auto_cast = torch.cuda.amp.autocast
+
         input_dict = self.comm_info["input_dict"]
         for key in input_dict.keys():
             if isinstance(input_dict[key], torch.Tensor):
                 input_dict[key] = input_dict[key].cuda(non_blocking=True)
-        with torch.cuda.amp.autocast(enabled=self.cfg.enable_amp):
+
+        with auto_cast(
+            enabled=self.cfg.enable_amp, dtype=AMP_DTYPE[self.cfg.amp_dtype]
+        ):
             output_dict = self.model(input_dict)
             loss = output_dict["loss"]
         self.optimizer.zero_grad()
@@ -233,6 +249,16 @@ class Trainer(TrainerBase):
     def build_writer(self):
         writer = SummaryWriter(self.cfg.save_path) if comm.is_main_process() else None
         self.logger.info(f"Tensorboard writer logging dir: {self.cfg.save_path}")
+        if self.cfg.enable_wandb and comm.is_main_process():
+            tag, name = Path(self.cfg.save_path).parts[-2:]
+            wandb.init(
+                project=self.cfg.wandb_project,
+                name=f"{tag}/{name}",
+                tags=[tag],
+                dir=self.cfg.save_path,
+                settings=wandb.Settings(api_key=self.cfg.wandb_key),
+                config=self.cfg,
+            )
         return writer
 
     def build_train_loader(self):
@@ -263,7 +289,7 @@ class Trainer(TrainerBase):
             collate_fn=partial(point_collate_fn, mix_prob=self.cfg.mix_prob),
             pin_memory=True,
             worker_init_fn=init_fn,
-            drop_last=True,
+            drop_last=len(train_data) > self.cfg.batch_size,
             persistent_workers=True,
         )
         return train_loader
@@ -297,7 +323,12 @@ class Trainer(TrainerBase):
         return build_scheduler(self.cfg.scheduler, self.optimizer)
 
     def build_scaler(self):
-        scaler = torch.cuda.amp.GradScaler() if self.cfg.enable_amp else None
+        if version.parse(torch.__version__) >= version.parse("2.4"):
+            grad_scaler = partial(torch.amp.GradScaler, device="cuda")
+        else:
+            # deprecated warning
+            grad_scaler = torch.cuda.amp.GradScaler
+        scaler = grad_scaler() if self.cfg.enable_amp else None
         return scaler
 
 

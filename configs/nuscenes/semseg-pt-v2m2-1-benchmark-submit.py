@@ -96,8 +96,13 @@ data = dict(
             dict(type="RandomFlip", p=0.5),
             dict(type="RandomJitter", sigma=0.005, clip=0.02),
             # dict(type="ElasticDistortion", distortion_params=[[0.2, 0.4], [0.8, 1.6]]),
-            # dict(type="GridSample", grid_size=0.05, hash_type="fnv", mode="train",
-            #      keys=("coord", "strength", "segment"), return_grid_coord=True),
+            # dict(
+            #     type="GridSample",
+            #     grid_size=0.05,
+            #     hash_type="fnv",
+            #     mode="train",
+            #     return_grid_coord=True,
+            # ),
             # dict(type="SphereCrop", point_max=1000000, mode="random"),
             # dict(type="CenterShift", apply_z=False),
             dict(type="ToTensor"),
@@ -155,3 +160,14 @@ data = dict(
         ignore_index=ignore_index,
     ),
 )
+
+# hook
+hooks = [
+    dict(type="CheckpointLoader"),
+    dict(type="ModelHook"),
+    dict(type="IterationTimer", warmup_iter=2),
+    dict(type="InformationWriter"),
+    dict(type="SemSegEvaluator"),
+    dict(type="CheckpointSaver", save_freq=None),
+    dict(type="PreciseEvaluator", test_last=True),
+]

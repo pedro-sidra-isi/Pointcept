@@ -90,7 +90,6 @@ data = dict(
                 hash_type="fnv",
                 mode="train",
                 return_grid_coord=True,
-                keys=("coord", "color", "normal", "segment", "instance"),
             ),
             dict(type="SphereCrop", sample_rate=0.8, mode="random"),
             dict(type="NormalizeColor"),
@@ -135,7 +134,6 @@ data = dict(
                 hash_type="fnv",
                 mode="train",
                 return_grid_coord=True,
-                keys=("coord", "color", "normal", "segment", "instance"),
             ),
             # dict(type="SphereCrop", point_max=1000000, mode='center'),
             dict(type="CenterShift", apply_z=False),
@@ -165,7 +163,56 @@ data = dict(
         ],
         test_mode=False,
     ),
-    test=dict(),  # currently not available
+    test=dict(
+        type=dataset_type,
+        split="Area_5",
+        data_root=data_root,
+        transform=[
+            dict(type="CenterShift", apply_z=True),
+            dict(
+                type="Copy",
+                keys_dict={
+                    "coord": "origin_coord",
+                    "segment": "origin_segment",
+                    "instance": "origin_instance",
+                },
+            ),
+            dict(
+                type="GridSample",
+                grid_size=0.05,
+                hash_type="fnv",
+                mode="train",
+                return_grid_coord=True,
+            ),
+            # dict(type="SphereCrop", point_max=1000000, mode='center'),
+            dict(type="CenterShift", apply_z=False),
+            dict(type="NormalizeColor"),
+            dict(
+                type="InstanceParser",
+                segment_ignore_index=segment_ignore_index,
+                instance_ignore_index=-1,
+            ),
+            dict(type="ToTensor"),
+            dict(
+                type="Collect",
+                keys=(
+                    "coord",
+                    "grid_coord",
+                    "segment",
+                    "instance",
+                    "origin_coord",
+                    "origin_segment",
+                    "origin_instance",
+                    "instance_centroid",
+                    "bbox",
+                    "name",
+                ),
+                feat_keys=("color", "normal"),
+                offset_keys_dict=dict(offset="coord", origin_offset="origin_coord"),
+            ),
+        ],
+        test_mode=False,
+    ),
 )
 
 hooks = [
@@ -178,4 +225,13 @@ hooks = [
         instance_ignore_index=-1,
     ),
     dict(type="CheckpointSaver", save_freq=None),
+    dict(type="PreciseEvaluator", test_last=False),
 ]
+
+# Tester
+test = dict(
+    type="InsSegTester",
+    segment_ignore_index=segment_ignore_index,
+    instance_ignore_index=-1,
+    verbose=False,
+)

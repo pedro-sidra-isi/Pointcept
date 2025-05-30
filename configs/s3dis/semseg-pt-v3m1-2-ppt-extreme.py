@@ -169,7 +169,7 @@ data = dict(
                     dict(type="CenterShift", apply_z=False),
                     dict(type="NormalizeColor"),
                     # dict(type="ShufflePoint"),
-                    dict(type="Add", keys_dict={"condition": "Structured3D"}),
+                    dict(type="Update", keys_dict={"condition": "Structured3D"}),
                     dict(type="ToTensor"),
                     dict(
                         type="Collect",
@@ -226,7 +226,7 @@ data = dict(
                     dict(type="CenterShift", apply_z=False),
                     dict(type="NormalizeColor"),
                     # dict(type="ShufflePoint"),
-                    dict(type="Add", keys_dict={"condition": "ScanNet"}),
+                    dict(type="Update", keys_dict={"condition": "ScanNet"}),
                     dict(type="ToTensor"),
                     dict(
                         type="Collect",
@@ -284,7 +284,7 @@ data = dict(
                     dict(type="CenterShift", apply_z=False),
                     dict(type="NormalizeColor"),
                     # dict(type="ShufflePoint"),
-                    dict(type="Add", keys_dict={"condition": "S3DIS"}),
+                    dict(type="Update", keys_dict={"condition": "S3DIS"}),
                     dict(type="ToTensor"),
                     dict(
                         type="Collect",
@@ -303,32 +303,29 @@ data = dict(
         data_root="data/s3dis",
         transform=[
             dict(type="CenterShift", apply_z=True),
-            dict(
-                type="Copy",
-                keys_dict={"coord": "origin_coord", "segment": "origin_segment"},
-            ),
+            dict(type="Copy", keys_dict={"segment": "origin_segment"}),
             dict(
                 type="GridSample",
                 grid_size=0.02,
                 hash_type="fnv",
                 mode="train",
                 return_grid_coord=True,
+                return_inverse=True,
             ),
             dict(type="CenterShift", apply_z=False),
             dict(type="NormalizeColor"),
             dict(type="ToTensor"),
-            dict(type="Add", keys_dict={"condition": "S3DIS"}),
+            dict(type="Update", keys_dict={"condition": "S3DIS"}),
             dict(
                 type="Collect",
                 keys=(
                     "coord",
                     "grid_coord",
-                    "origin_coord",
                     "segment",
                     "origin_segment",
                     "condition",
+                    "inverse",
                 ),
-                offset_keys_dict=dict(offset="coord", origin_offset="origin_coord"),
                 feat_keys=("color", "normal"),
             ),
         ],
@@ -349,13 +346,12 @@ data = dict(
                 grid_size=0.02,
                 hash_type="fnv",
                 mode="test",
-                keys=("coord", "color", "normal"),
                 return_grid_coord=True,
             ),
             crop=None,
             post_transform=[
                 dict(type="CenterShift", apply_z=False),
-                dict(type="Add", keys_dict={"condition": "S3DIS"}),
+                dict(type="Update", keys_dict={"condition": "S3DIS"}),
                 dict(type="ToTensor"),
                 dict(
                     type="Collect",
