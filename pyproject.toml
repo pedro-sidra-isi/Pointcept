@@ -1,0 +1,18 @@
+[project]
+name = "pointcept"
+version = "0.1.8"
+description = "Pointcept code base, adapted by pedro-sidra to be pip-installable" 
+readme = "README.md"
+requires-python = ">=3.7"
+dynamic = ["dependencies"]
+
+
+[tool.setuptools]
+# packages=[]
+
+[tool.setuptools.packages.find]
+exclude = ["exp", "data", "docs"]
+
+[build-system]
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
