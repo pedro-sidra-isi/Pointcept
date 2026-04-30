@@ -1,18 +1,18 @@
-[project]
-name = "pointcept"
-version = "0.1.8"
-description = "Pointcept code base, adapted by pedro-sidra to be pip-installable" 
-readme = "README.md"
-requires-python = ">=3.7"
-dynamic = ["dependencies"]
-
-
-[tool.setuptools]
-# packages=[]
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-exclude = ["exp", "data", "docs"]
+include = ["sculpting"]
 
-[build-system]
-requires = ["setuptools>=43.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+[project]
+name = "sculpting"
+version = "0.1.0"
+description = "pre-training by sculpting blocks"
+authors = [
+    { name = "Pedro Sidra de Freitas", email = "pedro.sidra@senairs.org.br" },
+]
+dependencies = [
+    "requests>=2.20.0",
+]
+readme = "README.md"

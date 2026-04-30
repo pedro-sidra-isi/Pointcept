@@ -1,0 +1,38 @@
+version: "3"
+
+services:
+  dev:
+    container_name: pointcept-dev
+    hostname: pointcept-dev
+    image: pedrosidra0/pointcept:v4.1
+    entrypoint: "./docker-entrypoint.sh"
+    command: "bash"
+    working_dir: /workspaces/Pointcept
+    network_mode: host
+    environment: 
+      - TERM=xterm-256color
+      - GLOO_SOCKET_IFNAME=enp4s0 
+      - NCCL_SOCKET_IFNAME=enp4s0
+      - SLURM_NODELIST 
+      - SLURM_NODEID  
+      - DIST_URL
+      - WORLD_SIZE  
+      - MASTER_PORT  
+      - MASTER_ADDR
+    volumes:
+      - .:/workspaces/Pointcept
+      - $HOME/.netrc:/root/.netrc
+      - $HOME/Pointcept:/workspaces/Pointcept
+      - $SCRATCH/exp:/workspaces/Pointcept/exp 
+      - $SCRATCH/data/scannet:/workspaces/Pointcept/data/scannet
+    shm_size: "32gb"
+    privileged: false
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

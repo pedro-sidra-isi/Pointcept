@@ -1,0 +1,6 @@
+[submodule "Pointcept"]
+	path = Pointcept
+	url = https://github.com/pedro-sidra-isi/Pointcept
+[submodule "perlyn"]
+	path = perlyn
+	url = https://github.com/skyl4b/perlyn
